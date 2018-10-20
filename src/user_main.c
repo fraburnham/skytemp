@@ -5,28 +5,47 @@
 #include "user_config.h"
 #include "DHT.h"
 
+#define MIN_TEMP_C               19  // ~67F
+#define MIN_TEMP_FRAC_C          5
+#define MAX_TEMP_C               24  // ~76F
+#define MAX_TEMP_FRAC_C          5
 #define TIMER_PERIOD_MS          5000
 #define BIT_RATE_9600            9600
 #define DATA_PIN                 BIT5
+#define TEMP_TASK_PRIO           0
+#define TEMP_TASK_QUEUE_LEN      1
 
 static os_timer_t temp_check_os_timer;
 
-void temp_check_timer(void *arg) {
-  DHTData *data = (DHTData*)read_dht(DATA_PIN);
-  
-  os_printf("Temp: %d.%d\n", data->temp, data->temp_frac);
-  os_printf("RH: %d.%d\n", data->humidity, data->humidity_frac);
+os_event_t temp_task_queue[TEMP_TASK_QUEUE_LEN];
 
-  // temp adjustment logic will go in here (and call out to relay.h or something
-  // relay.h needs to know about the fan, a/c, and heater (rather I'll need multiple relays or something)
-  // for now I should set up leds (or the logic analyzer) and just watch the output
+void
+temp_check_timer(void *arg) {
+  system_os_post(TEMP_TASK_PRIO, 0, NULL);
 }
 
-uint32 ICACHE_FLASH_ATTR user_rf_cal_sector_set(void) {
+void ICACHE_FLASH_ATTR
+temp_actions(os_event_t *events) {
+  DHTData *data = (DHTData*)read_dht(DATA_PIN);
+  
+  os_printf("Temp: %d.%d\t", data->temp, data->temp_frac);
+  os_printf("Humidity: %d.%d\n", data->humidity, data->humidity_frac);
+
+  // I run out of space in `.text` when using atof... linking too much?
+  if(data->temp >= MAX_TEMP_C && data->temp_frac > MAX_TEMP_FRAC_C) {
+    os_printf("Would activate A/C\n");
+  } else if (data->temp <= MIN_TEMP_C && data->temp_frac < MIN_TEMP_FRAC_C) {
+    os_printf("Would activate heat\n");
+  }
+}
+
+uint32 ICACHE_FLASH_ATTR
+user_rf_cal_sector_set(void) {
   return 0;
 }
 
-void ICACHE_FLASH_ATTR user_init() {
+void ICACHE_FLASH_ATTR
+user_init() {
   uart_init(BIT_RATE_9600, BIT_RATE_9600);
 
   gpio_init();
@@ -39,4 +58,7 @@ void ICACHE_FLASH_ATTR user_init() {
   os_timer_disarm(&temp_check_os_timer);
   os_timer_setfn(&temp_check_os_timer, (os_timer_func_t *)temp_check_timer, NULL);
   os_timer_arm(&temp_check_os_timer, TIMER_PERIOD_MS, 1);
+
+  // setup task to listen for data ready from timer
+  system_os_task(temp_actions, TEMP_TASK_PRIO, temp_task_queue, TEMP_TASK_QUEUE_LEN);
 }
