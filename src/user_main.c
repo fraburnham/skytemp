@@ -5,6 +5,7 @@
 #include "user_config.h"
 #include "DHT.h"
 
+#define LOG                      true
 #define MIN_TEMP_C               19  // ~67F
 #define MIN_TEMP_FRAC_C          5
 #define MAX_TEMP_C               24  // ~76F
@@ -27,15 +28,21 @@ temp_check_timer(void *arg) {
 void ICACHE_FLASH_ATTR
 temp_actions(os_event_t *events) {
   DHTData *data = (DHTData*)read_dht(DATA_PIN);
-  
-  os_printf("Temp: %d.%d\t", data->temp, data->temp_frac);
-  os_printf("Humidity: %d.%d\n", data->humidity, data->humidity_frac);
+
+  if(LOG) {
+    os_printf("Temp: %d.%d\t", data->temp, data->temp_frac);
+    os_printf("Humidity: %d.%d\n", data->humidity, data->humidity_frac);
+  }
 
   // I run out of space in `.text` when using atof... linking too much?
   if(data->temp >= MAX_TEMP_C && data->temp_frac > MAX_TEMP_FRAC_C) {
-    os_printf("Would activate A/C\n");
+    if(LOG) {
+      os_printf("Would activate A/C\n");
+    }
   } else if (data->temp <= MIN_TEMP_C && data->temp_frac < MIN_TEMP_FRAC_C) {
-    os_printf("Would activate heat\n");
+    if(LOG) {
+      os_printf("Would activate heat\n");
+    }
   }
 }
 
@@ -46,7 +53,9 @@ user_rf_cal_sector_set(void) {
 
 void ICACHE_FLASH_ATTR
 user_init() {
-  uart_init(BIT_RATE_9600, BIT_RATE_9600);
+  if(LOG) {
+    uart_init(BIT_RATE_9600, BIT_RATE_9600);
+  }
 
   gpio_init();
   // setup temp sensor pins
