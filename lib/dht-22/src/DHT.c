@@ -47,7 +47,7 @@ pulse_interrupt_handler () { // this should get the pin to listen to as an argum
   ets_intr_unlock();
 }
 
-uint8
+uint8 ICACHE_FLASH_ATTR
 wire_data_to_byte (uint32 bit_pulses[8][2], uint32 ref_pulses[8][2]) {
   uint8 byte = 0;
 
@@ -61,7 +61,7 @@ wire_data_to_byte (uint32 bit_pulses[8][2], uint32 ref_pulses[8][2]) {
   return byte;
 }
 
-void
+void ICACHE_FLASH_ATTR
 send_start_signal (int data_pin) {
   gpio_output_set(0, data_pin, data_pin, 0);
   os_delay_us(20000);
@@ -69,7 +69,7 @@ send_start_signal (int data_pin) {
   gpio_output_set(0, 0, 0, data_pin);
 }
 
-bool
+bool ICACHE_FLASH_ATTR
 valid_data (uint8 *data) {
   uint8 parity = 0;
 
@@ -84,7 +84,7 @@ valid_data (uint8 *data) {
   return (parity == data[4]);
 }
 
-DHTData *
+DHTData * ICACHE_FLASH_ATTR
 parse_dht_data () {
   static DHTData parsed_data;
   uint8 raw_data[5] = {0};
@@ -105,7 +105,7 @@ parse_dht_data () {
   return &parsed_data;
 }
 
-DHTData *
+DHTData * ICACHE_FLASH_ATTR
 read_dht(int data_pin) {
   static uint8 raw_data[5] = {0};
   pulse_offset = 0;
