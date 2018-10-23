@@ -5,14 +5,18 @@
 #include "user_config.h"
 #include "DHT.h"
 
+// user_config.h may be better for this, but I think it is meant for configging the chip...
 #define LOG                      true
 #define ADJUSTED_MIN_TEMP_C      195 // 19.5C ~67F
 #define ADJUSTED_MAX_TEMP_C      245 // 24.5C ~76F
-#define TIMER_PERIOD_MS          5000
+#define TIMER_PERIOD_MS          60000
 #define BIT_RATE_9600            9600
-#define DATA_PIN                 BIT5
 #define TEMP_TASK_PRIO           0
 #define TEMP_TASK_QUEUE_LEN      1
+#define DATA_PIN                 BIT5
+#define FAN_PIN                  BIT14 // R 
+#define AIRCON_PIN               BIT12 // S
+#define HEAT_PIN                 BIT13 // T
 
 static os_timer_t temp_check_os_timer;
 
@@ -21,6 +25,33 @@ os_event_t temp_task_queue[TEMP_TASK_QUEUE_LEN];
 void
 temp_check_timer(void *arg) {
   system_os_post(TEMP_TASK_PRIO, 0, NULL);
+}
+
+void ICACHE_FLASH_ATTR
+start_heat_cycle() {
+  if(LOG) {
+    os_printf("Starting heat cycle\n");
+  }
+
+  gpio_output_set(HEAT_PIN, AIRCON_PIN, HEAT_PIN|AIRCON_PIN, 0);
+}
+
+void ICACHE_FLASH_ATTR
+start_aircon_cycle() {
+  if(LOG) {
+    os_printf("Starting air cycle\n");
+  }
+  
+  gpio_output_set(AIRCON_PIN, HEAT_PIN, AIRCON_PIN|HEAT_PIN, 0);
+}
+
+void ICACHE_FLASH_ATTR
+end_climate_cycle() {
+  if(LOG) {
+    os_printf("Ending climate cycle\n");
+  }
+
+  gpio_output_set(0, AIRCON_PIN|HEAT_PIN, AIRCON_PIN|HEAT_PIN, 0);
 }
 
 void ICACHE_FLASH_ATTR
@@ -34,14 +65,15 @@ temp_actions(os_event_t *events) {
 
   int adjusted_temp = (data->temp * 10) + data->temp_frac;
 
+  // consider requiring a second read 5s later that must also be low before triggering
+  // maybe do both reads and avg the values then compare
+
   if(adjusted_temp > ADJUSTED_MAX_TEMP_C) {
-    if(LOG) {
-      os_printf("Would activate A/C\n");
-    }
+    start_aircon_cycle();
   } else if (adjusted_temp < ADJUSTED_MIN_TEMP_C) {
-    if(LOG) {
-      os_printf("Would activate heat\n");
-    }
+    start_heat_cycle();
+  } else {
+    end_climate_cycle();
   }
 }
 
@@ -57,10 +89,13 @@ user_init() {
   }
 
   gpio_init();
-  // setup temp sensor pins
-  PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5);  // data
-  PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO4_U, FUNC_GPIO4);  // trigger
-  gpio_output_set(BIT4, 0, BIT4, 0);
+  // setup temp sensor pins (find PERIPHS_IO_MUX in eagle_soc.h)
+  PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5);  // dht
+
+  // setup hvac control pins
+  PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_GPIO14); // fan
+  PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, FUNC_GPIO12); // a/c
+  PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_GPIO13); // heat
 
   // start periodic temp check
   os_timer_disarm(&temp_check_os_timer);
