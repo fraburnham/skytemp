@@ -7,6 +7,11 @@
 uint32 bit_pulses[DATA_LEN][2], ref_pulses[DATA_LEN][2];
 int pulse_offset;
 
+int
+pin_to_bit(int pin) {
+  return (1 << pin);
+}
+
 void
 handle_rising_edge_interrupt (uint32 now) {
   bit_pulses[pulse_offset][PULSE_START] = now;
@@ -16,31 +21,31 @@ handle_rising_edge_interrupt (uint32 now) {
 }
 
 void
-handle_falling_edge_interrupt (uint32 now) {
+handle_falling_edge_interrupt (int data_pin, uint32 now) {
   ref_pulses[pulse_offset][PULSE_START] = now;
-   
+
   if (pulse_offset > 0) {
     bit_pulses[pulse_offset-1][PULSE_END] = now;
   }
-  
+
   if (pulse_offset > (DATA_LEN - 1)) {
-    gpio_pin_intr_state_set(GPIO_ID_PIN(5), GPIO_PIN_INTR_DISABLE);
+    gpio_pin_intr_state_set(GPIO_ID_PIN(data_pin), GPIO_PIN_INTR_DISABLE);
   }
 }
 
 void
-pulse_interrupt_handler () { // this should get the pin to listen to as an argument and expects to be set for both edges
+pulse_interrupt_handler (int *data_pin) {
   uint32 now = system_get_time();
-  
+
   ets_intr_lock();
   uint32 gpio_status = GPIO_REG_READ(GPIO_STATUS_ADDRESS); // read interrupt
   GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, gpio_status); // clear interrupt flag
 
-  if (gpio_status & BIT5) {  // needs to be passable!
-    if (GPIO_INPUT_GET(5)) {
+  if (gpio_status & pin_to_bit(*data_pin)) {
+    if (GPIO_INPUT_GET(*data_pin)) {
       handle_rising_edge_interrupt(now);
     } else {
-      handle_falling_edge_interrupt(now);
+      handle_falling_edge_interrupt(*data_pin, now);
     }
   }
 
@@ -63,6 +68,8 @@ wire_data_to_byte (uint32 bit_pulses[8][2], uint32 ref_pulses[8][2]) {
 
 void ICACHE_FLASH_ATTR
 send_start_signal (int data_pin) {
+  data_pin = pin_to_bit(data_pin);
+
   gpio_output_set(0, data_pin, data_pin, 0);
   os_delay_us(20000);
 
@@ -111,11 +118,11 @@ read_dht(int data_pin) {
   pulse_offset = 0;
   memset(bit_pulses, 0, sizeof(bit_pulses));
   memset(ref_pulses, 0, sizeof(ref_pulses));
-    
+
   send_start_signal(data_pin);
 
-  ETS_GPIO_INTR_ATTACH(pulse_interrupt_handler, NULL);
-  gpio_pin_intr_state_set(GPIO_ID_PIN(5), GPIO_PIN_INTR_ANYEDGE);
+  ETS_GPIO_INTR_ATTACH(pulse_interrupt_handler, &data_pin);
+  gpio_pin_intr_state_set(GPIO_ID_PIN(data_pin), GPIO_PIN_INTR_ANYEDGE);
   ETS_GPIO_INTR_ENABLE();
 
   // delay for read to complete (what would be a better way?)
