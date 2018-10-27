@@ -8,8 +8,8 @@
 #define LOG                      true
 #define BIT_RATE_9600            9600
 
-#define ADJUSTED_MIN_TEMP_C      195 // 19.5C ~67F
-#define ADJUSTED_MAX_TEMP_C      245 // 24.5C ~76F
+#define ADJUSTED_MIN_TEMP_C      200 // 20.0C
+#define ADJUSTED_MAX_TEMP_C      250 // 25.0C
 #define TEMP_CHECK_PERIOD_MINS   5
 #define TEMP_TASK_PRIO           0
 #define TEMP_TASK_QUEUE_LEN      1
