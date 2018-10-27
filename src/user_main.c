@@ -5,26 +5,34 @@
 #include "user_config.h"
 #include "DHT.h"
 
-// user_config.h may be better for this, but I think it is meant for configging the chip...
 #define LOG                      true
-#define ADJUSTED_MIN_TEMP_C      195 // 19.5C ~67F
-#define ADJUSTED_MAX_TEMP_C      245 // 24.5C ~76F
-#define TIMER_PERIOD_MS          60000
 #define BIT_RATE_9600            9600
+
+#define ADJUSTED_MIN_TEMP_C      200 // 20.0C
+#define ADJUSTED_MAX_TEMP_C      250 // 25.0C
+#define TEMP_CHECK_PERIOD_MINS   5
 #define TEMP_TASK_PRIO           0
 #define TEMP_TASK_QUEUE_LEN      1
+#define TIMER_PERIOD_MS          60000
+
+#define AIRCON_PIN               BIT12
 #define DATA_PIN                 BIT5
-#define FAN_PIN                  BIT14 // R 
-#define AIRCON_PIN               BIT12 // S
-#define HEAT_PIN                 BIT13 // T
+#define FAN_PIN                  BIT14
+#define HEAT_PIN                 BIT13
 
 static os_timer_t temp_check_os_timer;
-
 os_event_t temp_task_queue[TEMP_TASK_QUEUE_LEN];
+
+int periods = 0;
 
 void
 temp_check_timer(void *arg) {
-  system_os_post(TEMP_TASK_PRIO, 0, NULL);
+  periods++;
+
+  if(periods == TEMP_CHECK_PERIOD_MINS) {
+    periods = 0;
+    system_os_post(TEMP_TASK_PRIO, 0, NULL);
+  }
 }
 
 void ICACHE_FLASH_ATTR
