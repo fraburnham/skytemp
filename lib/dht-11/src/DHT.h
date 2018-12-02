@@ -1,3 +1,6 @@
+#ifndef DHT_H
+#define DHT_H
+
 #define PULSE_START 0
 #define PULSE_END   1
 #define DATA_LEN    41
@@ -10,3 +13,5 @@ typedef struct DHTData {
 } DHTData;
 
 extern DHTData *read_dht(int data_pin);
+
+#endif
