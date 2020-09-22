@@ -56,7 +56,7 @@ adjust_temps_route(Request *request) {
 
   adjust_temps(min, max);
 
-  char *body_fmt = "<html>New temp degrees dC min: %d max: %d</html>";
+  char *body_fmt = "<html><head><meta http-equiv='refresh' content='2; url=./' /></head>New temp degrees dC min: %d max: %d</html>";
   static char body[64];
 
   os_sprintf(body, body_fmt, min, max);
