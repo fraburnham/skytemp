@@ -11,6 +11,3 @@
 #define DATA_PIN                 5  // BIT5
 #define FAN_PIN                  BIT14
 #define HEAT_PIN                 BIT13
-
-#define SOFTAP_SSID              "Skytemp 00"
-#define SOFTAP_PASS              "youshouldchangethis"

@@ -15,7 +15,6 @@ user_rf_cal_sector_set(void) {
 
 void ICACHE_FLASH_ATTR
 post_init_setup() {
-  if(!start_softap()) { return; }
   if(!start_server()) { return; }
 }
 
@@ -42,6 +41,9 @@ user_init() {
   // setup task to listen for data ready from timer
   system_os_task(temp_actions, TEMP_TASK_PRIO, temp_task_queue, TEMP_TASK_QUEUE_LEN);
 
-  // setup callback to init server & softap
+  // config connection w/ wifi ap
+  start_station();
+
+  // setup callback to init server
   system_init_done_cb(&post_init_setup);  // lots of setup should move here probably
 }
