@@ -7,6 +7,6 @@ const String LOCATION = "living-room";
 const String INFLUX_HOST = "docker.skynet";
 const int INFLUX_PORT = 8086;
 const String INFLUX_DB = "skynet";
-const int READ_DELAY_uS = 90000;
+const unsigned long READ_DELAY_MS = 90000;
 
 #endif

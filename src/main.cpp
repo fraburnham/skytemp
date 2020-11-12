@@ -23,7 +23,7 @@ void setup()
 // need to get away from loop into interrupts for lower power consumption
 void loop()
 {
-  delay(READ_DELAY_uS);
+  delay(READ_DELAY_MS);
 
   if(dht->read(DHT_RETRIES)) {
     Serial.print("Relative Humidity: ");
