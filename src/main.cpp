@@ -1,14 +1,17 @@
 #include "Arduino.h"
-#include "DHT.h"
 #include "wifi.h"
 #include "config.h"
+#include "sensor.h"
 
-DHT dht(DHT_PIN, DHT_TYPE);
+Sensor* dht;
 
 void setup()
 {
   Serial.begin(9600);
   delay(10);
+
+  dht = new Sensor(DHT_PIN);
+  
   Serial.println("\nConnecting WiFi...");
   Serial.print("Success: ");
   Serial.println(initWiFi());
@@ -17,16 +20,15 @@ void setup()
 // need to get away from loop into interrupts for lower power consumption
 void loop()
 {
-  delay(10000);
+  delay(60000);
 
-  float relative_humidity = dht.readHumidity();
-  float temp_C = dht.readTemperature();
+  if(dht->read(DHT_RETRIES)) {
+    Serial.print("Relative Humidity: ");
+    Serial.print(dht->relative_humidity());
+    Serial.println("%");
 
-  Serial.print("Relative Humidity: ");
-  Serial.print(relative_humidity);
-  Serial.println("%");
-
-  Serial.print("Temperature: ");
-  Serial.print(temp_C);
-  Serial.println("C");
+    Serial.print("Temperature: ");
+    Serial.print(dht->temperature());
+    Serial.println("C");
+  }
 }
