@@ -1,3 +1,6 @@
 [submodule "lib/esp8266-http"]
 	path = lib/esp8266-http
 	url = git@github.com:fraburnham/esp8266-http.git
+[submodule "lib/DHT-sensor-library"]
+	path = lib/DHT-sensor-library
+	url = git@github.com:adafruit/DHT-sensor-library.git
