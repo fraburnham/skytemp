@@ -4,14 +4,11 @@ Sensor::Sensor(int data_pin) { // dht11 assumed for now
   dht = new DHT(data_pin, DHT11, 0);
 }
 
-bool Sensor::read(int retries) {
-  for(int i=0; i<retries; i++) {
-    _relative_humidity = dht->readHumidity();
-    _temp_C = dht->readTemperature();
+bool Sensor::read(int retries) { // skipping retries for a bit. The speed of them may be hurting the device. Iirc the docs suggest waiting 60+s between reads
+  _relative_humidity = dht->readHumidity();
+  _temp_C = dht->readTemperature();
 
-    if(!isnan(_relative_humidity) || !isnan(_temp_C)) return true;
-    delay(5000);
-  }
+  if(!isnan(_relative_humidity) || !isnan(_temp_C)) return true;
 
   return false;
 }

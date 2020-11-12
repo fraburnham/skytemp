@@ -2,8 +2,10 @@
 #include "wifi.h"
 #include "config.h"
 #include "sensor.h"
+#include "influxdb.h"
 
 Sensor* dht;
+InfluxDB* idb;
 
 void setup()
 {
@@ -11,6 +13,7 @@ void setup()
   delay(10);
 
   dht = new Sensor(DHT_PIN);
+  idb = new InfluxDB(LOCATION, INFLUX_HOST, INFLUX_PORT, INFLUX_DB);
   
   Serial.println("\nConnecting WiFi...");
   Serial.print("Success: ");
@@ -20,7 +23,7 @@ void setup()
 // need to get away from loop into interrupts for lower power consumption
 void loop()
 {
-  delay(60000);
+  delay(READ_DELAY_uS);
 
   if(dht->read(DHT_RETRIES)) {
     Serial.print("Relative Humidity: ");
@@ -30,5 +33,11 @@ void loop()
     Serial.print("Temperature: ");
     Serial.print(dht->temperature());
     Serial.println("C");
+
+    Serial.print("Storing temp success: ");
+    Serial.println(idb->writeTemperature(dht->temperature()));
+
+    Serial.print("Storing humidity success: ");
+    Serial.println(idb->writeHumidity(dht->relative_humidity()));
   }
 }
