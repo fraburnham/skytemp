@@ -17,9 +17,11 @@ class InfluxDB {
   bool writeLine(String);
 
  public:
+  InfluxDB();
   InfluxDB(String, String, int, String);
   bool writeTemperature(float);
   bool writeHumidity(float);
+  bool writeError(String);
 };
 
 #endif
